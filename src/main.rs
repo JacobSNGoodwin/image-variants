@@ -1,3 +1,5 @@
+use std::env::current_dir;
+
 use clap::{ArgEnum, Parser};
 
 #[derive(Parser, Debug)]
@@ -37,7 +39,6 @@ struct Args {
 enum OutputTypes {
     JPG,
     WEBP,
-    AVIF,
     PNG,
     GIF,
     SVG,
@@ -72,4 +73,13 @@ fn main() {
 
     println!("The output types are \"{:?}\"", formats);
     println!("The widths are \"{:?}\"", widths);
+
+    let base_path = current_dir().unwrap();
+    println!("The images_dir path: {:?}", base_path);
+
+    let images_path = base_path.join(args.dir);
+    println!("Imges path: {:?}", images_path);
+
+    let out_path = base_path.join(args.out_dir);
+    println!("Imges path: {:?}", out_path);
 }
