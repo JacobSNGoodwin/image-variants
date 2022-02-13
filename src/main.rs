@@ -1,4 +1,4 @@
-use std::env::current_dir;
+use std::{env::current_dir, fmt::Error, fs::read_dir, str::FromStr};
 
 use clap::{ArgEnum, Parser};
 
@@ -44,6 +44,22 @@ enum OutputTypes {
     SVG,
 }
 
+impl FromStr for OutputTypes {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "jpg" => Ok(Self::JPG),
+            "jpeg" => Ok(Self::JPG),
+            "webp" => Ok(Self::WEBP),
+            "png" => Ok(Self::PNG),
+            "gif" => Ok(Self::GIF),
+            "svg" => Ok(Self::SVG),
+            _ => Err(Error),
+        }
+    }
+}
+
 fn quality_range(v: &str) -> Result<(), String> {
     if let Ok(val) = v.parse::<u8>() {
         if val >= 1 && val <= 100 {
@@ -75,11 +91,23 @@ fn main() {
     println!("The widths are \"{:?}\"", widths);
 
     let base_path = current_dir().unwrap();
-    println!("The images_dir path: {:?}", base_path);
-
     let images_path = base_path.join(args.dir);
-    println!("Imges path: {:?}", images_path);
 
     let out_path = base_path.join(args.out_dir);
-    println!("Imges path: {:?}", out_path);
+    println!("Output path: {:?}", out_path);
+
+    let image_files_dir = match read_dir(&images_path) {
+        Ok(files) => files,
+        Err(e) => panic!(
+            "Unable to read files in images_path: {:?}. Error: {}",
+            images_path, e
+        ),
+    };
+
+    let filtered_image_files = image_files_dir.filter_map(|entry| {
+        let file_entry = entry.unwrap();
+        let file_type = file_entry.file_type().unwrap();
+
+        Some(())
+    });
 }
