@@ -1,0 +1,11 @@
+[package]
+name = "imagevariants"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jacob Goodwin <jacob.goodwin@gmail.com>"]
+description = "Basic CLI utility to create image variants for images in a directory."
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "3.0.14", features = ["derive"] }
