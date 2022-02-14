@@ -1,4 +1,4 @@
-use std::{env::current_dir, fmt::Error, fs::read_dir, str::FromStr};
+use std::{collections::HashSet, env::current_dir, fs::read_dir, path::PathBuf};
 
 use clap::{ArgEnum, Parser};
 
@@ -38,26 +38,11 @@ struct Args {
 #[derive(ArgEnum, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum OutputTypes {
     JPG,
+    JPEG,
     WEBP,
     PNG,
     GIF,
     SVG,
-}
-
-impl FromStr for OutputTypes {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "jpg" => Ok(Self::JPG),
-            "jpeg" => Ok(Self::JPG),
-            "webp" => Ok(Self::WEBP),
-            "png" => Ok(Self::PNG),
-            "gif" => Ok(Self::GIF),
-            "svg" => Ok(Self::SVG),
-            _ => Err(Error),
-        }
-    }
 }
 
 fn quality_range(v: &str) -> Result<(), String> {
@@ -76,15 +61,16 @@ fn quality_range(v: &str) -> Result<(), String> {
     }
 }
 
+const ALLOWED_FILE_EXTENSIONS: [&'static str; 7] =
+    ["jpg", "jpeg", "png", "gif", "avif", "webp", "svg"];
+
 fn main() {
     let args = Args::parse();
 
-    println!("{:?}", args);
-
+    let valid_extensions = HashSet::from(ALLOWED_FILE_EXTENSIONS);
     let formats = args
         .formats
         .unwrap_or(vec![OutputTypes::JPG, OutputTypes::WEBP]);
-
     let widths = args.widths.unwrap_or(vec![800, 1200, 1800, 2400]);
 
     println!("The output types are \"{:?}\"", formats);
@@ -92,9 +78,12 @@ fn main() {
 
     let base_path = current_dir().unwrap();
     let images_path = base_path.join(args.dir);
-
     let out_path = base_path.join(args.out_dir);
+
+    println!("Images path: {:?}", images_path);
     println!("Output path: {:?}", out_path);
+
+    println!("{:?}", OutputTypes::value_variants());
 
     let image_files_dir = match read_dir(&images_path) {
         Ok(files) => files,
@@ -104,10 +93,20 @@ fn main() {
         ),
     };
 
-    let filtered_image_files = image_files_dir.filter_map(|entry| {
-        let file_entry = entry.unwrap();
-        let file_type = file_entry.file_type().unwrap();
+    let filtered_image_files: Vec<PathBuf> = image_files_dir
+        .filter_map(|entry| {
+            let file_entry = entry.unwrap();
+            let file_path = file_entry.path();
 
-        Some(())
-    });
+            let ext = file_path.extension()?.to_str()?;
+
+            if valid_extensions.contains(ext) {
+                Some(file_path)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    println!("Filtered image files: {:?}", filtered_image_files);
 }
