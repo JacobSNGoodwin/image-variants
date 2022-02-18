@@ -18,6 +18,7 @@ pub struct ImageData {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SingleImageData {
+    lqip: Option<String>,
     #[serde(flatten)]
     image_widths: HashMap<ImageWidth, TypeVariantData>,
 }
@@ -41,7 +42,7 @@ pub enum ImageFormat {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ImageRecord {
+pub struct ImageVariant {
     pub base_name: String,
     pub width: u16,
     pub format: ImageFormat,
@@ -54,9 +55,16 @@ impl ImageData {
         }
     }
 
-    pub fn add_record(&mut self, image_record: &ImageRecord) {
+    pub fn add_record(&mut self, base_name: String) {
+        self.images.entry(base_name).or_insert(SingleImageData {
+            lqip: None,
+            image_widths: HashMap::new(),
+        });
+    }
+
+    pub fn add_variant(&mut self, image_record: &ImageVariant) {
         let file_name = format!(
-            "{}-w{}.{}",
+            "{}-{}w.{}",
             image_record.base_name,
             image_record.width,
             image_record.format.to_string(),
@@ -67,6 +75,7 @@ impl ImageData {
             .entry(image_record.base_name.to_owned())
             .or_insert(SingleImageData {
                 image_widths: HashMap::new(),
+                lqip: None,
             });
 
         let type_variant_data = singe_image_data

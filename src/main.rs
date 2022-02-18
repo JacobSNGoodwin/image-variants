@@ -1,4 +1,6 @@
 mod image_data;
+mod image_proc;
+
 use std::{
     collections::HashSet,
     env::current_dir,
@@ -7,7 +9,9 @@ use std::{
 };
 
 use clap::Parser;
-use image_data::{ImageData, ImageFormat, ImageRecord};
+use image_data::{ImageData, ImageFormat};
+
+use crate::{image_data::ImageVariant, image_proc::create_lqip};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -28,18 +32,10 @@ struct Args {
     #[clap(short, long, multiple_values(true))]
     widths: Option<Vec<u16>>,
 
-    /// Do not include a low-quality image placeholder
-    #[clap(long)]
-    no_lqip: bool,
-
     /// The outout quality for JPG and WEBP images.
     /// Should be a value from 1-100.
     #[clap(short, long, default_value_t = 80, validator(quality_range))]
     quality: u8,
-
-    /// Only include a low-quality image placeholder
-    #[clap(long)]
-    lqip_only: bool,
 }
 
 fn quality_range(v: &str) -> Result<(), String> {
@@ -78,11 +74,6 @@ fn main() {
     let images_path = base_path.join(args.dir);
     let out_path = base_path.join(args.out_dir);
 
-    // println!("Images path: {:?}", images_path);
-    // println!("Output path: {:?}", out_path);
-
-    // println!("{:?}", ImageFormat::value_variants());
-
     let image_files_dir = match read_dir(&images_path) {
         Ok(files) => files,
         Err(e) => panic!(
@@ -106,22 +97,28 @@ fn main() {
         })
         .collect();
 
-    // println!("Filtered image files: {:?}", filtered_image_files);
-
     let mut image_data = ImageData::new();
 
     filtered_image_files.iter().for_each(|path| {
+        // TODO - don't unwrap, but also don't add record
+        // on errored match arm
+        let name = path.file_stem().unwrap().to_str().unwrap();
+
+        // TODO - LQIP
+        let lqip = create_lqip(path);
+
+        println!("The LQIP: {}", lqip);
+
+        image_data.add_record(name.to_string());
+
         widths.iter().for_each(|width| {
             formats.iter().for_each(|format| {
-                // TODO - don't unwrap, but also don't add record
-                // on errored match arm
-                let base_name = path.file_stem().unwrap().to_str().unwrap();
-                let image_record = ImageRecord {
-                    base_name: String::from(base_name),
+                let image_variant = ImageVariant {
+                    base_name: name.to_string(),
                     width: width.to_owned(),
                     format: format.to_owned(),
                 };
-                image_data.add_record(&image_record)
+                image_data.add_variant(&image_variant)
             });
         })
     });
@@ -131,4 +128,6 @@ fn main() {
     println!("Attempting to write data info to {:?}", data_file_path);
 
     image_data.write(&data_file_path).unwrap();
+
+    println!("Success!");
 }
