@@ -1,3 +1,4 @@
+mod image_data;
 use std::{collections::HashSet, env::current_dir, fs::read_dir, path::PathBuf};
 
 use clap::{ArgEnum, Parser};
@@ -15,7 +16,7 @@ struct Args {
 
     /// Space-separated list of output file-types
     #[clap(short, long, arg_enum, multiple_values(true))]
-    formats: Option<Vec<OutputTypes>>,
+    formats: Option<Vec<FormatType>>,
 
     /// Space-separated list of image variant widths in pixels
     #[clap(short, long, multiple_values(true))]
@@ -36,9 +37,8 @@ struct Args {
 }
 
 #[derive(ArgEnum, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum OutputTypes {
+enum FormatType {
     JPG,
-    JPEG,
     WEBP,
     PNG,
     GIF,
@@ -70,7 +70,7 @@ fn main() {
     let valid_extensions = HashSet::from(ALLOWED_FILE_EXTENSIONS);
     let formats = args
         .formats
-        .unwrap_or(vec![OutputTypes::JPG, OutputTypes::WEBP]);
+        .unwrap_or(vec![FormatType::JPG, FormatType::WEBP]);
     let widths = args.widths.unwrap_or(vec![800, 1200, 1800, 2400]);
 
     println!("The output types are \"{:?}\"", formats);
@@ -83,7 +83,7 @@ fn main() {
     println!("Images path: {:?}", images_path);
     println!("Output path: {:?}", out_path);
 
-    println!("{:?}", OutputTypes::value_variants());
+    println!("{:?}", FormatType::value_variants());
 
     let image_files_dir = match read_dir(&images_path) {
         Ok(files) => files,
