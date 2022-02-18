@@ -1,3 +1,4 @@
+use clap::ArgEnum;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -28,8 +29,10 @@ struct TypeVariantData {
 }
 
 // need to be able to compare key equality
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-enum ImageFormat {
+#[derive(
+    ArgEnum, Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
+pub enum ImageFormat {
     JPG,
     WEBP,
     PNG,
@@ -39,9 +42,9 @@ enum ImageFormat {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ImageRecord {
-    base_name: String,
-    width: u16,
-    format: ImageFormat,
+    pub base_name: String,
+    pub width: u16,
+    pub format: ImageFormat,
 }
 
 impl ImageData {
