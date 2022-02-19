@@ -11,7 +11,10 @@ use std::{
 use clap::Parser;
 use image_data::{ImageData, ImageFormat};
 
-use crate::{image_data::ImageVariant, image_proc::create_lqip};
+use crate::{
+    image_data::ImageVariant,
+    image_proc::{create_lqip, LQIPData},
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -104,10 +107,14 @@ fn main() {
         // on errored match arm
         let name = path.file_stem().unwrap().to_str().unwrap();
 
-        // TODO - LQIP
         let lqip = create_lqip(path);
 
-        println!("The LQIP: {}", lqip);
+        // if Some -> add LQIP to image_data
+        // else print warning
+        match lqip {
+            Some(_) => todo!(),
+            None => todo!(),
+        }
 
         image_data.add_record(name.to_string());
 
