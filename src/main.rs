@@ -5,6 +5,7 @@ use std::{
     collections::HashSet,
     env::current_dir,
     fs::{create_dir_all, read_dir},
+    ops::ControlFlow,
     path::PathBuf,
 };
 
@@ -102,19 +103,34 @@ fn main() {
 
     let mut image_data = ImageData::new();
 
-    filtered_image_files.iter().for_each(|path| {
-        // TODO - don't unwrap, but also don't add record
-        // on errored match arm
-        let name = path.file_stem().unwrap().to_str().unwrap();
+    filtered_image_files.iter().try_for_each(|path| {
+        let name = path
+            .file_stem()
+            .ok_or_else(|| {
+                println!("Could not extract file name from path.");
+                ControlFlow::<()>::Continue(())
+            })
+            .and_then(|val| {
+                val.to_str().ok_or_else(|| {
+                    println!("Could not extract file name from path.");
+                    ControlFlow::<()>::Continue(())
+                })
+            });
 
-        let lqip = create_lqip(path);
+        let name = match name {
+            Ok(val) => val,
+            Err(cf) => return cf,
+        };
 
-        // if Some -> add LQIP to image_data
-        // else print warning
-        match lqip {
-            Some(_) => todo!(),
-            None => todo!(),
-        }
+        let lqip = match create_lqip(path) {
+            Ok(data) => data,
+            Err(e) => {
+                println!("{}", e);
+                return ControlFlow::<()>::Continue(());
+            }
+        };
+
+        println!("Created lqip_data: {:?}", lqip);
 
         image_data.add_record(name.to_string());
 
@@ -127,7 +143,9 @@ fn main() {
                 };
                 image_data.add_variant(&image_variant)
             });
-        })
+        });
+
+        ControlFlow::Continue(())
     });
 
     let data_file_path = out_path.join("data.json");

@@ -10,7 +10,7 @@ pub struct LQIPData {
 }
 
 #[derive(Debug)]
-enum ImageProcError {
+pub enum ImageProcError {
     Conversion,
     IO(io::Error),
 }
