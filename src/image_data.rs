@@ -17,8 +17,15 @@ pub struct ImageData {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct LQIPData {
+    pub image: String,
+    pub width: u32,
+    pub height: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 struct SingleImageData {
-    lqip: Option<String>,
+    lqip: Option<LQIPData>,
     #[serde(flatten)]
     image_widths: HashMap<ImageWidth, TypeVariantData>,
 }
@@ -55,9 +62,9 @@ impl ImageData {
         }
     }
 
-    pub fn add_record(&mut self, base_name: String) {
+    pub fn add_record(&mut self, base_name: String, lqip: Option<LQIPData>) {
         self.images.entry(base_name).or_insert(SingleImageData {
-            lqip: None,
+            lqip,
             image_widths: HashMap::new(),
         });
     }

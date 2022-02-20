@@ -4,9 +4,9 @@ use image::GenericImageView;
 
 #[derive(Debug)]
 pub struct LQIPData {
-    image: String,
-    width: u32,
-    height: u32,
+    pub image: String,
+    pub width: u32,
+    pub height: u32,
 }
 
 #[derive(Debug)]
@@ -39,10 +39,11 @@ impl From<image::ImageError> for ImageProcError {
 
 pub type ImageProcResult<T> = Result<T, ImageProcError>;
 
-pub fn create_lqip(input: &Path) -> ImageProcResult<LQIPData> {
-    let img = image::open(input)?;
+pub fn create_lqip(input: &String) -> ImageProcResult<LQIPData> {
+    let img = image::open(&input)?;
+    let path = Path::new(input.as_str());
 
-    let ext = input.extension().ok_or(ImageProcError::IO(io::Error::new(
+    let ext = path.extension().ok_or(ImageProcError::IO(io::Error::new(
         io::ErrorKind::Other,
         "Could not extract file extension",
     )))?;

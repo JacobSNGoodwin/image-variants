@@ -5,17 +5,10 @@ use std::{
     collections::HashSet,
     env::current_dir,
     fs::{create_dir_all, read_dir},
-    ops::ControlFlow,
-    path::PathBuf,
 };
 
 use clap::Parser;
 use image_data::{ImageData, ImageFormat};
-
-use crate::{
-    image_data::ImageVariant,
-    image_proc::{create_lqip, LQIPData},
-};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -61,8 +54,13 @@ fn quality_range(v: &str) -> Result<(), String> {
 const ALLOWED_FILE_EXTENSIONS: [&'static str; 7] =
     ["jpg", "jpeg", "png", "gif", "avif", "webp", "svg"];
 
+#[derive(Debug)]
+struct InputImage {
+    name: String,
+    path: String,
+}
+
 fn main() {
-    // TODO - get data file name
     let args = Args::parse();
 
     let valid_extensions = HashSet::from(ALLOWED_FILE_EXTENSIONS);
@@ -71,85 +69,66 @@ fn main() {
         .unwrap_or(vec![ImageFormat::JPG, ImageFormat::WEBP]);
     let widths = args.widths.unwrap_or(vec![800, 1200, 1800, 2400]);
 
-    // println!("The output types are \"{:?}\"", formats);
-    // println!("The widths are \"{:?}\"", widths);
-
     let base_path = current_dir().unwrap();
     let images_path = base_path.join(args.dir);
     let out_path = base_path.join(args.out_dir);
+    create_dir_all(&out_path).expect("Failed to create out_dir");
 
-    let image_files_dir = match read_dir(&images_path) {
-        Ok(files) => files,
-        Err(e) => panic!(
-            "Unable to read files in images_path: {:?}. Error: {}",
-            images_path, e
-        ),
-    };
+    let image_files_dir =
+        read_dir(&images_path).expect("Could not read directory provided in \"dir\" argument");
 
-    let filtered_image_files: Vec<PathBuf> = image_files_dir
+    let valid_image_files: Vec<InputImage> = image_files_dir
         .filter_map(|entry| {
-            let file_entry = entry.unwrap();
-            let file_path = file_entry.path();
-
-            let ext = file_path.extension()?.to_str()?;
+            let file_entry = entry.ok()?;
+            let path = file_entry.path();
+            let ext = path.extension()?.to_str()?;
 
             if valid_extensions.contains(ext) {
-                Some(file_path)
+                Some(InputImage {
+                    name: String::from(path.file_stem()?.to_str()?),
+                    path: String::from(path.to_str()?),
+                })
             } else {
                 None
             }
         })
         .collect();
 
+    println!("Found the following supported files...");
+    println!("{:?}", valid_image_files);
+
     let mut image_data = ImageData::new();
 
-    filtered_image_files.iter().try_for_each(|path| {
-        let name = path
-            .file_stem()
-            .ok_or_else(|| {
-                println!("Could not extract file name from path.");
-                ControlFlow::<()>::Continue(())
-            })
-            .and_then(|val| {
-                val.to_str().ok_or_else(|| {
-                    println!("Could not extract file name from path.");
-                    ControlFlow::<()>::Continue(())
-                })
-            });
-
-        let name = match name {
-            Ok(val) => val,
-            Err(cf) => return cf,
-        };
-
-        let lqip = match create_lqip(path) {
-            Ok(data) => data,
-            Err(e) => {
-                println!("{}", e);
-                return ControlFlow::<()>::Continue(());
+    valid_image_files.iter().for_each(|image_info| {
+        let lqip = match image_proc::create_lqip(&image_info.path) {
+            // Todo -> could creat a From or Into
+            // Or find better rust way to convert idential structs
+            Ok(data) => Some(image_data::LQIPData {
+                image: data.image,
+                width: data.width,
+                height: data.height,
+            }),
+            Err(_) => {
+                println!("Failed to create LQIP for {}", image_info.name);
+                None
             }
         };
 
-        println!("Created lqip_data: {:?}", lqip);
-
-        image_data.add_record(name.to_string());
+        image_data.add_record(image_info.name.to_string(), lqip);
 
         widths.iter().for_each(|width| {
             formats.iter().for_each(|format| {
-                let image_variant = ImageVariant {
-                    base_name: name.to_string(),
+                let image_variant = image_data::ImageVariant {
+                    base_name: image_info.name.to_string(),
                     width: width.to_owned(),
                     format: format.to_owned(),
                 };
                 image_data.add_variant(&image_variant)
             });
         });
-
-        ControlFlow::Continue(())
     });
 
     let data_file_path = out_path.join("data.json");
-    create_dir_all(out_path).unwrap();
     println!("Attempting to write data info to {:?}", data_file_path);
 
     image_data.write(&data_file_path).unwrap();
