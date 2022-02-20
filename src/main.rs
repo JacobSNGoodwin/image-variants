@@ -27,7 +27,7 @@ struct Args {
 
     /// Space-separated list of image variant widths in pixels
     #[clap(short, long, multiple_values(true))]
-    widths: Option<Vec<u16>>,
+    widths: Option<Vec<u32>>,
 
     /// The outout quality for JPG and WEBP images.
     /// Should be a value from 1-100.
@@ -68,6 +68,7 @@ fn main() {
         .formats
         .unwrap_or(vec![ImageFormat::JPG, ImageFormat::WEBP]);
     let widths = args.widths.unwrap_or(vec![800, 1200, 1800, 2400]);
+    let quality = args.quality;
 
     let base_path = current_dir().unwrap();
     let images_path = base_path.join(args.dir);
@@ -114,10 +115,28 @@ fn main() {
             }
         };
 
-        image_data.add_record(image_info.name.to_string(), lqip);
+        image_data.add_record(image_info.name.to_owned(), lqip);
 
         widths.iter().for_each(|width| {
             formats.iter().for_each(|format| {
+                // TODO - create image. Add to data if successfull
+                println!(
+                    "Converting image at {} to width: {} and format: {}. Using quality = {}. Output path is: {:?}",
+                    image_info.path, width, format, quality, out_path,
+                );
+
+                match image_proc::create_variant(
+                    image_info.path.to_owned(),
+                    image_info.name.to_owned(),
+                    &out_path,
+                    width,
+                    format,
+                    // quality,
+                ) {
+                    Ok(_) => println!("Successfully created image!"),
+                    Err(e) => println!("Failed to create image: {:?}", e),
+                }
+
                 let image_variant = image_data::ImageVariant {
                     base_name: image_info.name.to_string(),
                     width: width.to_owned(),
@@ -131,7 +150,9 @@ fn main() {
     let data_file_path = out_path.join("data.json");
     println!("Attempting to write data info to {:?}", data_file_path);
 
-    image_data.write(&data_file_path).unwrap();
+    image_data
+        .write(&data_file_path)
+        .expect("Failed to write image data to file.");
 
     println!("Success!");
 }

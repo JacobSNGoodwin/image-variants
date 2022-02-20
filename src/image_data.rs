@@ -7,7 +7,7 @@ use std::fs;
 use std::path::Path;
 
 type BaseTitle = String;
-type ImageWidth = u16;
+type ImageWidth = u32;
 type FileName = String;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -51,7 +51,7 @@ pub enum ImageFormat {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ImageVariant {
     pub base_name: String,
-    pub width: u16,
+    pub width: u32,
     pub format: ImageFormat,
 }
 
