@@ -64,9 +64,7 @@ fn main() {
     let args = Args::parse();
 
     let valid_extensions = HashSet::from(ALLOWED_FILE_EXTENSIONS);
-    let formats = args
-        .formats
-        .unwrap_or(vec![ImageFormat::JPG, ImageFormat::WEBP]);
+    let formats = args.formats.unwrap_or(vec![ImageFormat::JPG]);
     let widths = args.widths.unwrap_or(vec![800, 1200, 1800, 2400]);
     let quality = args.quality;
 

@@ -42,7 +42,6 @@ struct TypeVariantData {
 )]
 pub enum ImageFormat {
     JPG,
-    WEBP,
     PNG,
     GIF,
     SVG,
@@ -118,7 +117,6 @@ impl Display for ImageFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             ImageFormat::JPG => write!(f, "jpg"),
-            ImageFormat::WEBP => write!(f, "webp"),
             ImageFormat::PNG => write!(f, "png"),
             ImageFormat::GIF => write!(f, "gif"),
             ImageFormat::SVG => write!(f, "svg"),
