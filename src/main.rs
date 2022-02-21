@@ -1,13 +1,14 @@
 mod image_data;
 mod image_proc;
 
+use clap::Parser;
+// use rayon::prelude::*;
 use std::{
     collections::HashSet,
     env::current_dir,
     fs::{create_dir_all, read_dir},
 };
 
-use clap::Parser;
 use image_data::{ImageData, ImageFormat};
 
 #[derive(Parser, Debug)]
@@ -115,9 +116,19 @@ fn main() {
 
         image_data.add_record(image_info.name.to_owned(), lqip);
 
+        // TODO - To add Rayon, we cannot mutate `image_data` in 
+        // multiple threads at once. So maybe we can create the images in parallel, returning Some((width, format)) if successful and None otherwise.
+        // From this info we can create the image_data with only successfully
+        // converted images
+        let width_format_pairs: Vec<(&u32, &ImageFormat)> = widths.iter().flat_map(|w| {
+            let inner: Vec<(&u32, &ImageFormat)> = formats.iter().map(|f| (w, f)).collect();
+
+            inner
+        }).collect();
+
+        // iterate over width_format_pairs to create image
         widths.iter().for_each(|width| {
             formats.iter().for_each(|format| {
-                // TODO - create image. Add to data if successfull
                 println!(
                     "Converting image at {} to width: {} and format: {}. Using quality = {}. Output path is: {:?}",
                     image_info.path, width, format, quality, out_path,
@@ -140,7 +151,7 @@ fn main() {
                     width: width.to_owned(),
                     format: format.to_owned(),
                 };
-                image_data.add_variant(&image_variant)
+                image_data.add_variant(&image_variant);
             });
         });
     });
