@@ -2,7 +2,7 @@ mod image_data;
 mod image_proc;
 
 use clap::Parser;
-// use rayon::prelude::*;
+use rayon::prelude::*;
 use std::{
     collections::HashSet,
     env::current_dir,
@@ -69,7 +69,7 @@ fn main() {
     let widths = args.widths.unwrap_or(vec![800, 1200, 1800, 2400]);
     let quality = args.quality;
 
-    let base_path = current_dir().unwrap();
+    let base_path = current_dir().expect("There was a problem accessing the current directory.");
     let images_path = base_path.join(args.dir);
     let out_path = base_path.join(args.out_dir);
     create_dir_all(&out_path).expect("Failed to create out_dir");
@@ -116,43 +116,45 @@ fn main() {
 
         image_data.add_record(image_info.name.to_owned(), lqip);
 
-        // TODO - To add Rayon, we cannot mutate `image_data` in 
-        // multiple threads at once. So maybe we can create the images in parallel, returning Some((width, format)) if successful and None otherwise.
-        // From this info we can create the image_data with only successfully
-        // converted images
-        let width_format_pairs: Vec<(&u32, &ImageFormat)> = widths.iter().flat_map(|w| {
-            let inner: Vec<(&u32, &ImageFormat)> = formats.iter().map(|f| (w, f)).collect();
+        let width_format_pairs: Vec<(u32, ImageFormat)> = widths
+            .iter()
+            .flat_map(|w| formats.iter().map(|f| (*w, f.to_owned())))
+            .collect();
 
-            inner
-        }).collect();
-
-        // iterate over width_format_pairs to create image
-        widths.iter().for_each(|width| {
-            formats.iter().for_each(|format| {
+        let created_images: Vec<image_data::ImageVariant> = width_format_pairs
+            .par_iter()
+            .filter_map(|(width, format)| {
                 println!(
-                    "Converting image at {} to width: {} and format: {}. Using quality = {}. Output path is: {:?}",
-                    image_info.path, width, format, quality, out_path,
+                    "\nConverting image at {} to width: {} and format: {}. Using quality = {}.",
+                    image_info.path, width, format, quality,
                 );
 
                 match image_proc::create_variant(
                     image_info.path.to_owned(),
-                    image_info.name.to_owned(),
                     &out_path,
-                    width,
+                    image_info.name.to_owned(),
+                    *width,
                     format,
                     // quality,
                 ) {
-                    Ok(_) => println!("Successfully created image!"),
-                    Err(e) => println!("Failed to create image: {:?}", e),
+                    Ok(_) => {
+                        println!("Successfully created image!");
+                        Some(image_data::ImageVariant {
+                            base_name: image_info.name.to_string(),
+                            width: width.to_owned(),
+                            format: format.to_owned(),
+                        })
+                    }
+                    Err(e) => {
+                        println!("Failed to create image: {:?}", e);
+                        None
+                    }
                 }
+            })
+            .collect();
 
-                let image_variant = image_data::ImageVariant {
-                    base_name: image_info.name.to_string(),
-                    width: width.to_owned(),
-                    format: format.to_owned(),
-                };
-                image_data.add_variant(&image_variant);
-            });
+        created_images.iter().for_each(|image_record| {
+            image_data.add_variant(image_record);
         });
     });
 
@@ -163,5 +165,5 @@ fn main() {
         .write(&data_file_path)
         .expect("Failed to write image data to file.");
 
-    println!("Success!");
+    println!("Conversion completed. See data.json for records created!");
 }

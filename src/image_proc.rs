@@ -1,8 +1,4 @@
-use std::{
-    fmt::Display,
-    io,
-    path::{Path, PathBuf},
-};
+use std::{fmt::Display, io, path::Path};
 
 use crate::image_data::ImageFormat;
 use image::GenericImageView;
@@ -70,21 +66,25 @@ pub fn create_lqip(input: &String) -> ImageProcResult<LQIPData> {
     })
 }
 
-pub fn create_variant(
-    in_path: String,
+pub fn create_variant<PIn, POut>(
+    in_path: PIn,
+    out_path: POut,
     name: String,
-    out_path: &PathBuf,
-    width: &u32,
+    width: u32,
     format: &ImageFormat,
     // quality: u8,
-) -> ImageProcResult<()> {
-    let img = image::open(&in_path)?;
+) -> ImageProcResult<()>
+where
+    PIn: AsRef<Path>,
+    POut: AsRef<Path>,
+{
+    let img = image::open(in_path.as_ref())?;
 
-    let out_img = img.resize(*width, *width * 3, image::imageops::Lanczos3);
+    img.resize(width, width * 2, image::imageops::FilterType::Nearest);
 
-    let out_file = out_path.join(format!("{}-{}w.{}", name, width, format));
+    let out_file = out_path
+        .as_ref()
+        .join(format!("{}-{}w.{}", name, width, format));
 
-    println!("The output path: {:?}", out_file);
-
-    Ok(out_img.save(out_file)?)
+    Ok(img.save(out_file)?)
 }
