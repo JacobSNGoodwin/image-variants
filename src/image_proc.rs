@@ -1,7 +1,7 @@
-use std::{fmt::Display, io, path::Path};
+use std::{fmt::Display, fs::File, io, path::Path};
 
 use crate::image_data::ImageFormat;
-use image::GenericImageView;
+use image::{codecs::jpeg::JpegEncoder, GenericImageView};
 
 #[derive(Debug)]
 pub struct LQIPData {
@@ -35,6 +35,12 @@ impl From<image::ImageError> for ImageProcError {
             image::ImageError::Unsupported(_) => ImageProcError::Conversion,
             image::ImageError::IoError(e) => ImageProcError::IO(e),
         }
+    }
+}
+
+impl From<std::io::Error> for ImageProcError {
+    fn from(e: std::io::Error) -> Self {
+        ImageProcError::IO(e)
     }
 }
 
@@ -72,7 +78,7 @@ pub fn create_variant<PIn, POut>(
     name: String,
     width: u32,
     format: &ImageFormat,
-    // quality: u8,
+    quality: u8,
 ) -> ImageProcResult<()>
 where
     PIn: AsRef<Path>,
@@ -82,9 +88,17 @@ where
 
     let out_img = img.resize(width, width * 2, image::imageops::FilterType::Lanczos3);
 
-    let out_file = out_path
+    let out_file_path = out_path
         .as_ref()
         .join(format!("{}-{}w.{}", name, width, format));
 
-    Ok(out_img.save(out_file)?)
+    let out_file = File::create(&out_file_path)?;
+
+    match format {
+        ImageFormat::JPG => {
+            let mut encoder = JpegEncoder::new_with_quality(out_file, quality);
+            return Ok(encoder.encode_image(&out_img)?);
+        }
+        _ => return Ok(out_img.save(out_file_path)?),
+    }
 }

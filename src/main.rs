@@ -135,7 +135,7 @@ fn main() {
                     image_info.name.to_owned(),
                     *width,
                     format,
-                    // quality,
+                    quality,
                 ) {
                     Ok(_) => {
                         println!("Successfully created image!");
