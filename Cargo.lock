@@ -68,6 +68,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
+name = "cc"
+version = "1.0.73"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fff2a6927b3bb87f9595d67196a70493f627687a71d87a0d692242c33f58c11"
+dependencies = [
+ "jobserver",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -310,6 +319,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "webp",
 ]
 
 [[package]]
@@ -336,6 +346,15 @@ name = "itoa"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
+
+[[package]]
+name = "jobserver"
+version = "0.1.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af25a77299a7f711a01975c35a6a424eb6862092cc2d6c72c4ed6cbc56dfc1fa"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "jpeg-decoder"
@@ -375,6 +394,15 @@ name = "libc"
 version = "0.2.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e74d72e0f9b65b5b4ca49a346af3976df0f9c61d550727f349ecd559f251a26c"
+
+[[package]]
+name = "libwebp-sys"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "439fd1885aa28937e7edcd68d2e793cb4a22f8733460d2519fbafd2b215672bf"
+dependencies = [
+ "cc",
+]
 
 [[package]]
 name = "lock_api"
@@ -783,6 +811,16 @@ name = "wasm-bindgen-shared"
 version = "0.2.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d958d035c4438e28c70e4321a2911302f10135ce78a9c7834c0cab4123d06a2"
+
+[[package]]
+name = "webp"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f80f6a431ea17cbe9d6958628e553c17d22df62b301b39940a9dfd60f3dd7c6"
+dependencies = [
+ "image",
+ "libwebp-sys",
+]
 
 [[package]]
 name = "weezl"

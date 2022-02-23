@@ -44,6 +44,7 @@ pub enum ImageFormat {
     JPG,
     PNG,
     GIF,
+    WEBP,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -118,6 +119,7 @@ impl Display for ImageFormat {
             ImageFormat::JPG => write!(f, "jpg"),
             ImageFormat::PNG => write!(f, "png"),
             ImageFormat::GIF => write!(f, "gif"),
+            ImageFormat::WEBP => write!(f, "webp"),
         }
     }
 }

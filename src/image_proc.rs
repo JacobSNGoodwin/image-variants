@@ -1,7 +1,12 @@
-use std::{fmt::Display, fs::File, io, path::Path};
+use std::{
+    fmt::Display,
+    fs::File,
+    io::{self, Write},
+    path::Path,
+};
 
 use crate::image_data::ImageFormat;
-use image::{codecs::jpeg::JpegEncoder, GenericImageView};
+use image::{codecs::jpeg::JpegEncoder, EncodableLayout, GenericImageView};
 
 #[derive(Debug)]
 pub struct LQIPData {
@@ -41,6 +46,12 @@ impl From<image::ImageError> for ImageProcError {
 impl From<std::io::Error> for ImageProcError {
     fn from(e: std::io::Error) -> Self {
         ImageProcError::IO(e)
+    }
+}
+
+impl From<&str> for ImageProcError {
+    fn from(s: &str) -> Self {
+        ImageProcError::IO(std::io::Error::new(std::io::ErrorKind::Other, s))
     }
 }
 
@@ -92,13 +103,18 @@ where
         .as_ref()
         .join(format!("{}-{}w.{}", name, width, format));
 
-    let out_file = File::create(&out_file_path)?;
+    let mut out_file = File::create(&out_file_path)?;
 
     match format {
         ImageFormat::JPG => {
             let mut encoder = JpegEncoder::new_with_quality(out_file, quality);
-            return Ok(encoder.encode_image(&out_img)?);
+            Ok(encoder.encode_image(&out_img)?)
         }
-        _ => return Ok(out_img.save(out_file_path)?),
+        ImageFormat::WEBP => {
+            let encoder = webp::Encoder::from_image(&out_img)?;
+            let webp_img = encoder.encode(quality as f32);
+            Ok(out_file.write_all(webp_img.as_bytes())?)
+        }
+        _ => Ok(out_img.save(out_file_path)?),
     }
 }
