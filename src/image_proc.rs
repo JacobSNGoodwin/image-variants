@@ -80,11 +80,11 @@ where
 {
     let img = image::open(in_path.as_ref())?;
 
-    img.resize(width, width * 2, image::imageops::FilterType::Nearest);
+    let out_img = img.resize(width, width * 2, image::imageops::FilterType::Lanczos3);
 
     let out_file = out_path
         .as_ref()
         .join(format!("{}-{}w.{}", name, width, format));
 
-    Ok(img.save(out_file)?)
+    Ok(out_img.save(out_file)?)
 }
